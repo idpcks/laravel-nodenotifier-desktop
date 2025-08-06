@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Log;
 
 class DesktopNotifierService
 {
-    protected $client;
-    protected $nodeScriptPath;
+    protected Client $client;
+    protected string $nodeScriptPath;
 
     public function __construct()
     {

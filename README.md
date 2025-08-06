@@ -10,11 +10,12 @@ A Laravel package that provides desktop notifications using node-notifier. This 
 - 🔧 Easy configuration
 - 🚀 Simple installation with Artisan command
 - 📊 Logging support
+- ⚡ Laravel 12 ready with modern PHP features
 
 ## Requirements
 
-- PHP 8.0 or higher
-- Laravel 9.0, 10.0, or 11.0
+- PHP 8.1 or higher
+- Laravel 9.0, 10.0, 11.0, or 12.0
 - Node.js (for desktop notifications)
 
 ## Installation
@@ -210,6 +211,20 @@ If you get an error that Node.js is not found:
 ## License
 
 This package is open-sourced software licensed under the [MIT license](LICENSE).
+
+## Changelog
+
+### Version 1.1.0
+- ✅ Added Laravel 12 support
+- 🔧 Updated minimum PHP requirement to 8.1
+- ⚡ Enhanced type declarations for better IDE support
+- 🧪 Updated testing dependencies
+
+### Version 1.0.0
+- 🎉 Initial release
+- 🖥️ Cross-platform desktop notifications
+- 📝 Multiple notification types
+- 🚀 Artisan command for easy installation
 
 ## Support
 

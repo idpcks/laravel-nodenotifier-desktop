@@ -24,7 +24,7 @@ class InstallNodeNotifierCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): int
     {
         $this->info('Installing Laravel Node Notifier Desktop dependencies...');
 

@@ -9,14 +9,14 @@ use LaravelNodeNotifierDesktop\Facades\DesktopNotifier;
 
 class DesktopNotifierTest extends TestCase
 {
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [
             LaravelNodeNotifierDesktopServiceProvider::class,
         ];
     }
 
-    protected function getPackageAliases($app)
+    protected function getPackageAliases($app): array
     {
         return [
             'DesktopNotifier' => DesktopNotifier::class,
