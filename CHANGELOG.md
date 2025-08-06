@@ -2,6 +2,21 @@
 
 All notable changes to `laravel-nodenotifierdesktop` will be documented in this file.
 
+## [1.0.3] - 2024-12-19 - Patch Release
+
+### 🐛 Bug Fixes
+- **CRITICAL FIX:** Resolved notifier script installation error "Failed to copy notifier script to vendor directory"
+- **PATH FIX:** Added multiple path resolution strategies for notifier.js file
+- **FALLBACK FIX:** Added embedded script content fallback when source file not found
+- **ERROR HANDLING:** Improved error messages with detailed path information
+
+### 🔧 Improvements
+- Enhanced path detection for different installation scenarios
+- Better error reporting for troubleshooting
+- Robust fallback mechanism for script installation
+
+---
+
 ## [1.0.2] - 2024-12-19 - Bug Fix Release
 
 ### 🐛 Bug Fixes
