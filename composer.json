@@ -2,6 +2,7 @@
     "name": "laravel-nodenotifierdesktop/laravel-nodenotifierdesktop",
     "description": "Laravel package for desktop notifications using node-notifier",
     "type": "library",
+    "version": "1.0.3",
     "license": "MIT",
     "authors": [
         {

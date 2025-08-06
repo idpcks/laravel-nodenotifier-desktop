@@ -5,6 +5,7 @@ namespace LaravelNodeNotifierDesktop;
 use Illuminate\Support\ServiceProvider;
 use LaravelNodeNotifierDesktop\Services\DesktopNotifierService;
 use LaravelNodeNotifierDesktop\Console\Commands\InstallNodeNotifierCommand;
+use LaravelNodeNotifierDesktop\Console\Commands\DebugNodeNotifierCommand;
 
 class LaravelNodeNotifierDesktopServiceProvider extends ServiceProvider
 {
@@ -36,6 +37,7 @@ class LaravelNodeNotifierDesktopServiceProvider extends ServiceProvider
 
             $this->commands([
                 InstallNodeNotifierCommand::class,
+                DebugNodeNotifierCommand::class,
             ]);
         }
     }

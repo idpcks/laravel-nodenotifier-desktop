@@ -263,6 +263,33 @@ LOG_LEVEL=debug
 
 Then check `storage/logs/laravel.log` for detailed error information.
 
+### Debug Command
+
+Use the built-in debug command to diagnose issues:
+
+```bash
+php artisan desktop-notifier:debug
+```
+
+This command will:
+- ✅ Check Node.js installation and version
+- ✅ Verify notifier script availability
+- ✅ Test command building
+- ✅ Show configuration details
+- ✅ Provide troubleshooting recommendations
+- ✅ Test a sample notification
+
+### Common Error: "is not recognized as an internal or external command"
+
+This error typically occurs when Node.js is not found in the system PATH. The package now includes automatic Node.js detection and better error handling.
+
+**Solutions:**
+1. **Install Node.js:** Download from https://nodejs.org/
+2. **Add to PATH:** Ensure Node.js is in your system PATH
+3. **Restart terminal:** After installing Node.js
+4. **Use debug command:** `php artisan desktop-notifier:debug`
+5. **Manual path:** Set `node_path` in config file
+
 ## Contributing
 
 1. Fork the repository
@@ -276,6 +303,16 @@ Then check `storage/logs/laravel.log` for detailed error information.
 This package is open-sourced software licensed under the [MIT license](LICENSE).
 
 ## Changelog
+
+### Version 1.0.3 (Bug Fix Release)
+- 🐛 **FIXED:** Windows command execution issue with empty Node.js path
+- 🐛 **FIXED:** "is not recognized as an internal or external command" error
+- ✅ **NEW:** Automatic Node.js path detection for Windows and Unix systems
+- ✅ **NEW:** Debug command (`php artisan desktop-notifier:debug`) for troubleshooting
+- ✅ **NEW:** Enhanced error logging with Node.js path and version information
+- ✅ **NEW:** Better Windows command line handling and escaping
+- 🔧 **IMPROVED:** More robust Node.js availability checking
+- 📚 **IMPROVED:** Comprehensive troubleshooting documentation
 
 ### Version 1.0.2 (Bug Fix Release)
 - 🐛 **FIXED:** Windows command line escaping issue causing JSON parsing errors
