@@ -207,22 +207,54 @@ class InstallNodeNotifierCommand extends Command
      */
     protected function copyNotifierScriptToVendor(): bool
     {
-        $sourcePath = __DIR__ . '/../../../notifier.js';
+        // Try multiple possible source paths
+        $possibleSourcePaths = [
+            __DIR__ . '/../../../notifier.js',                    // Package root
+            base_path('vendor/laravel-nodenotifierdesktop/laravel-nodenotifierdesktop/notifier.js'), // Already in vendor
+            dirname(dirname(dirname(__DIR__))) . '/notifier.js',  // Alternative package root
+            __DIR__ . '/../../notifier.js',                       // Alternative path
+        ];
+
+        $sourcePath = null;
+        foreach ($possibleSourcePaths as $path) {
+            if (file_exists($path)) {
+                $sourcePath = $path;
+                break;
+            }
+        }
+
+        if (!$sourcePath) {
+            $this->error('Notifier script not found in any of these locations:');
+            foreach ($possibleSourcePaths as $path) {
+                $this->error('  - ' . $path);
+            }
+            
+            // Create the notifier script directly from content
+            return $this->createNotifierScriptFromContent();
+        }
+
         $vendorDir = base_path('vendor/laravel-nodenotifierdesktop/laravel-nodenotifierdesktop');
         $targetPath = $vendorDir . '/notifier.js';
-
-        if (!file_exists($sourcePath)) {
-            $this->error('Notifier script not found at: ' . $sourcePath);
-            return false;
-        }
 
         if (!is_dir($vendorDir)) {
             $this->error('Vendor directory not found: ' . $vendorDir);
             return false;
         }
 
+        // Check if target already exists and is the same
+        if (file_exists($targetPath)) {
+            if (file_get_contents($sourcePath) === file_get_contents($targetPath)) {
+                $this->info('Notifier script already exists and is up to date');
+                return true;
+            }
+        }
+
         if (!copy($sourcePath, $targetPath)) {
+            $lastError = error_get_last();
             $this->error('Failed to copy notifier script to vendor directory');
+            if ($lastError) {
+                $this->error('Error: ' . $lastError['message']);
+            }
             return false;
         }
 
@@ -232,6 +264,109 @@ class InstallNodeNotifierCommand extends Command
         }
 
         return true;
+    }
+
+    /**
+     * Create notifier script from embedded content if source file not found
+     */
+    protected function createNotifierScriptFromContent(): bool
+    {
+        $vendorDir = base_path('vendor/laravel-nodenotifierdesktop/laravel-nodenotifierdesktop');
+        $targetPath = $vendorDir . '/notifier.js';
+
+        if (!is_dir($vendorDir)) {
+            $this->error('Vendor directory not found: ' . $vendorDir);
+            return false;
+        }
+
+        // Embedded notifier script content
+        $notifierContent = $this->getNotifierScriptContent();
+
+        if (file_put_contents($targetPath, $notifierContent) === false) {
+            $this->error('Failed to create notifier script');
+            return false;
+        }
+
+        // Make script executable on Unix-like systems
+        if (PHP_OS_FAMILY !== 'Windows') {
+            chmod($targetPath, 0755);
+        }
+
+        $this->info('Notifier script created from embedded content');
+        return true;
+    }
+
+    /**
+     * Get the notifier script content
+     */
+    protected function getNotifierScriptContent(): string
+    {
+        return <<<'NOTIFIER_SCRIPT'
+#!/usr/bin/env node
+
+const notifier = require('node-notifier');
+const path = require('path');
+
+// Get notification data from command line arguments
+const notificationData = process.argv[2];
+
+if (!notificationData) {
+    console.error('No notification data provided');
+    process.exit(1);
+}
+
+try {
+    const data = JSON.parse(notificationData);
+    const { title, message, options = {} } = data;
+
+    // Default options
+    const defaultOptions = {
+        title: title || 'Laravel Notification',
+        message: message || '',
+        icon: options.icon || path.join(__dirname, 'default-icon.png'),
+        sound: options.sound !== false, // Default to true
+        timeout: options.timeout || 5000,
+        wait: false,
+        type: 'info'
+    };
+
+    // Platform-specific options
+    if (process.platform === 'win32') {
+        defaultOptions.icon = options.icon || path.join(__dirname, 'icons', 'info.png');
+    } else if (process.platform === 'darwin') {
+        defaultOptions.icon = options.icon || path.join(__dirname, 'icons', 'info.png');
+    } else {
+        // Linux
+        defaultOptions.icon = options.icon || path.join(__dirname, 'icons', 'info.png');
+    }
+
+    // Send notification
+    notifier.notify(defaultOptions, (err, response) => {
+        if (err) {
+            console.error('Notification error:', err);
+            process.exit(1);
+        }
+        
+        console.log('Notification sent successfully');
+        process.exit(0);
+    });
+
+    // Handle notification actions
+    notifier.on('click', () => {
+        console.log('Notification clicked');
+        process.exit(0);
+    });
+
+    notifier.on('timeout', () => {
+        console.log('Notification timeout');
+        process.exit(0);
+    });
+
+} catch (error) {
+    console.error('Error parsing notification data:', error);
+    process.exit(1);
+}
+NOTIFIER_SCRIPT;
     }
 
     /**

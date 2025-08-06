@@ -225,26 +225,27 @@ class DesktopNotifierService
      */
     protected function getNotifierScriptPath(): string
     {
-        // Try vendor directory first (when installed via composer)
-        $vendorScriptPath = base_path('vendor/laravel-nodenotifierdesktop/laravel-nodenotifierdesktop/notifier.js');
-        if (file_exists($vendorScriptPath)) {
-            return $vendorScriptPath;
+        // Priority order for script location
+        $possiblePaths = [
+            // Primary: vendor directory (after installation)
+            base_path('vendor/laravel-nodenotifierdesktop/laravel-nodenotifierdesktop/notifier.js'),
+            // Alternative: node_modules directory
+            base_path('node_modules/laravel-nodenotifierdesktop/notifier.js'),
+            // Development: package root directory
+            __DIR__ . '/../../notifier.js',
+            // Alternative package paths
+            dirname(dirname(__DIR__)) . '/notifier.js',
+        ];
+
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                return $path;
+            }
         }
 
-        // Try node_modules directory (after npm install)
-        $nodeModulesPath = base_path('node_modules/laravel-nodenotifierdesktop/notifier.js');
-        if (file_exists($nodeModulesPath)) {
-            return $nodeModulesPath;
-        }
-
-        // Try package root directory (development)
-        $packageRootPath = __DIR__ . '/../../notifier.js';
-        if (file_exists($packageRootPath)) {
-            return $packageRootPath;
-        }
-
-        // Fallback to vendor directory path (will be created during installation)
-        return $vendorScriptPath;
+        // If no script found, return the primary vendor path
+        // (this will trigger script creation during installation)
+        return base_path('vendor/laravel-nodenotifierdesktop/laravel-nodenotifierdesktop/notifier.js');
     }
 
     /**
