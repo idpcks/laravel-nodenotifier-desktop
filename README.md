@@ -50,6 +50,53 @@ This command will:
 - ✅ Copy the notifier script to the correct location
 - ✅ Test the installation with a sample notification
 
+## Uninstallation
+
+### Manual Uninstall
+
+Jika Anda ingin menghapus package ini dari project Laravel:
+
+```bash
+# 1. Remove via Composer
+composer remove laravel-nodenotifierdesktop/laravel-nodenotifierdesktop
+
+# 2. Remove config file (if published)
+rm config/laravel-nodenotifierdesktop.php
+
+# 3. Remove vendor directory
+rm -rf vendor/laravel-nodenotifierdesktop
+
+# 4. Clear caches
+php artisan config:clear
+php artisan cache:clear
+composer dump-autoload
+```
+
+### Automatic Uninstall Script
+
+Atau gunakan script uninstall otomatis:
+
+**Untuk Linux/macOS:**
+```bash
+php uninstall.php
+```
+
+**Untuk Windows:**
+```cmd
+uninstall.bat
+```
+
+Script ini akan:
+- ✅ Menghapus package via Composer
+- ✅ Menghapus file konfigurasi
+- ✅ Menghapus folder vendor package
+- ✅ Memeriksa dan menghapus registrasi manual di config/app.php
+- ✅ Membersihkan cache
+- ✅ Mencari penggunaan package dalam kode
+- ✅ Memberikan panduan langkah selanjutnya
+
+**📖 Dokumentasi lengkap:** Lihat [UNINSTALL.md](UNINSTALL.md) untuk panduan detail dan troubleshooting.
+
 ### Windows Users - Important Notes
 
 The package includes special handling for Windows:
@@ -311,8 +358,9 @@ This package is open-sourced software licensed under the [MIT license](LICENSE).
 - ✅ **NEW:** Debug command (`php artisan desktop-notifier:debug`) for troubleshooting
 - ✅ **NEW:** Enhanced error logging with Node.js path and version information
 - ✅ **NEW:** Better Windows command line handling and escaping
+- ✅ **NEW:** Uninstall scripts (PHP + Windows batch) and documentation for easy package removal
 - 🔧 **IMPROVED:** More robust Node.js availability checking
-- 📚 **IMPROVED:** Comprehensive troubleshooting documentation
+- 📚 **IMPROVED:** Comprehensive troubleshooting and uninstall documentation
 
 ### Version 1.0.2 (Bug Fix Release)
 - 🐛 **FIXED:** Windows command line escaping issue causing JSON parsing errors
