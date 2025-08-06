@@ -337,6 +337,16 @@ This error typically occurs when Node.js is not found in the system PATH. The pa
 4. **Use debug command:** `php artisan desktop-notifier:debug`
 5. **Manual path:** Set `node_path` in config file
 
+### Windows-Specific Error: `"'\"\"' is not recognized as an internal or external command"`
+
+**Fixed in v1.0.4!** This was a Windows command execution issue with empty Node.js path.
+
+**Solutions:**
+1. **Update to v1.0.4 or later:** `composer update laravel-nodenotifierdesktop/laravel-nodenotifierdesktop`
+2. **Clear config cache:** `php artisan config:clear`
+3. **Reinstall dependencies:** `php artisan desktop-notifier:install --force`
+4. **Check configuration:** Ensure `node_path` is set to `'node'` in config file
+
 ## Contributing
 
 1. Fork the repository
@@ -350,6 +360,14 @@ This error typically occurs when Node.js is not found in the system PATH. The pa
 This package is open-sourced software licensed under the [MIT license](LICENSE).
 
 ## Changelog
+
+### Version 1.0.4 (Critical Bug Fix Release)
+- 🐛 **FIXED:** Windows command execution issue with empty Node.js path causing `"'\"\"' is not recognized as an internal or external command"`
+- 🐛 **FIXED:** Double-quoting issues in Windows command execution
+- 🐛 **FIXED:** Default configuration now uses 'node' instead of null for node_path
+- ✅ **NEW:** Improved Windows command line handling without additional quoting
+- ✅ **NEW:** Better fallback logic for Node.js path detection
+- 🔧 **IMPROVED:** More robust command building for Windows systems
 
 ### Version 1.0.3 (Bug Fix Release)
 - 🐛 **FIXED:** Windows command execution issue with empty Node.js path

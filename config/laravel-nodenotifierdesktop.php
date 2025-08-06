@@ -56,7 +56,7 @@ return [
     | Leave null to use the default 'node' command.
     |
     */
-    'node_path' => null,
+    'node_path' => 'node',
 
     /*
     |--------------------------------------------------------------------------

@@ -153,8 +153,14 @@ class DesktopNotifierService
         if (PHP_OS_FAMILY === 'Windows') {
             // On Windows, we need to properly escape quotes and wrap in double quotes
             $escapedData = '"' . str_replace('"', '\"', $data) . '"';
-            // Ensure nodePath is properly quoted for Windows
-            $nodePath = '"' . trim($nodePath, '"') . '"';
+            
+            // Don't quote nodePath if it's just 'node' to avoid double-quoting issues
+            if ($nodePath === 'node') {
+                $nodePath = 'node';
+            } else {
+                // Ensure nodePath is properly quoted for Windows
+                $nodePath = '"' . trim($nodePath, '"') . '"';
+            }
         } else {
             // On Unix-like systems, use escapeshellarg
             $escapedData = escapeshellarg($data);
@@ -187,10 +193,8 @@ class DesktopNotifierService
         
         // On Windows, we need to handle command execution differently
         if (PHP_OS_FAMILY === 'Windows') {
-            // Remove any extra quotes that might cause issues
-            $command = trim($command, '"');
-            // Use cmd /c for Windows command execution
-            $fullCommand = 'cmd /c "' . $command . '" 2>&1';
+            // Use cmd /c without additional quoting to avoid double-quoting issues
+            $fullCommand = 'cmd /c ' . $command . ' 2>&1';
         }
 
         exec($fullCommand, $output, $returnCode);
@@ -248,7 +252,7 @@ class DesktopNotifierService
         // Try to find Node.js path first
         $nodePath = $this->findNodePath();
         
-        if ($nodePath) {
+        if ($nodePath && $nodePath !== 'node') {
             // Use the found path
             exec("\"$nodePath\" --version 2>&1", $output, $returnCode);
         } else {
@@ -272,7 +276,7 @@ class DesktopNotifierService
         // Try to find Node.js path first
         $nodePath = $this->findNodePath();
         
-        if ($nodePath) {
+        if ($nodePath && $nodePath !== 'node') {
             // Use the found path
             exec("\"$nodePath\" --version 2>&1", $output, $returnCode);
         } else {
@@ -376,6 +380,7 @@ class DesktopNotifierService
             return trim($output[0]);
         }
 
-        return null;
+        // If no Node.js found, return 'node' as fallback
+        return 'node';
     }
 } 

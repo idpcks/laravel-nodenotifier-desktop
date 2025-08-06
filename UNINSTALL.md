@@ -128,6 +128,18 @@ Setelah uninstall, pastikan:
 
 ## Troubleshooting Uninstall
 
+### Windows Command Execution Error
+
+If you encounter the error `"'\"\"' is not recognized as an internal or external command"`:
+
+**This is fixed in v1.0.4!** The issue was caused by empty Node.js path in configuration.
+
+**Solutions:**
+1. **Update to latest version:** `composer update laravel-nodenotifierdesktop/laravel-nodenotifierdesktop`
+2. **Clear config cache:** `php artisan config:clear`
+3. **Reinstall dependencies:** `php artisan desktop-notifier:install --force`
+4. **Check configuration:** Ensure `node_path` is set to `'node'` in config file
+
 ### Error: "Package not found"
 
 Jika Anda mendapat error "Package not found" saat menjalankan `composer remove`:
