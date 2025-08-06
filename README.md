@@ -16,27 +16,65 @@ A Laravel package that provides desktop notifications using node-notifier. This 
 
 - PHP 8.1 or higher
 - Laravel 9.0, 10.0, 11.0, or 12.0
-- Node.js (for desktop notifications)
+- Node.js 12+ (for desktop notifications)
+- npm (comes with Node.js)
+
+### Platform Support
+- ✅ Windows 10/11
+- ✅ macOS (latest versions)
+- ✅ Linux (Ubuntu, CentOS, etc.)
 
 ## Installation
 
-1. Install the package via Composer:
+### 1. Install the package via Composer:
 
 ```bash
 composer require laravel-nodenotifierdesktop/laravel-nodenotifierdesktop
 ```
 
-2. Publish the configuration file:
+### 2. Publish the configuration file (optional):
 
 ```bash
 php artisan vendor:publish --tag=laravel-nodenotifierdesktop-config
 ```
 
-3. Install Node.js dependencies:
+### 3. Install Node.js dependencies:
 
 ```bash
 php artisan desktop-notifier:install
 ```
+
+This command will:
+- ✅ Check Node.js and npm availability
+- ✅ Install `node-notifier` in the vendor directory
+- ✅ Copy the notifier script to the correct location
+- ✅ Test the installation with a sample notification
+
+### Windows Users - Important Notes
+
+The package includes special handling for Windows:
+- ✅ **Automatic Windows detection** - No extra configuration needed
+- ✅ **Fixed command line escaping** - Resolves JSON parsing errors
+- ✅ **Proper path handling** - Works with Windows file paths
+- ✅ **Enhanced error messages** - Clear troubleshooting information
+
+If you encounter issues on Windows:
+
+1. **Ensure Node.js is in your PATH:**
+   ```cmd
+   node --version
+   npm --version
+   ```
+
+2. **Run as Administrator** if you get permission errors:
+   ```cmd
+   # Run your terminal as Administrator, then:
+   php artisan desktop-notifier:install --force
+   ```
+
+3. **Check Windows notifications are enabled:**
+   - Go to Settings > System > Notifications & actions
+   - Ensure notifications are enabled for your system
 
 ## Configuration
 
@@ -171,34 +209,59 @@ php artisan desktop-notifier:install --force
 
 ## Troubleshooting
 
-### Node.js Not Found
+### Common Issues
 
-If you get an error that Node.js is not found:
+#### 🐛 "SyntaxError: Expected property name or '}' in JSON" (Windows)
+**Fixed in v1.0.2!** This was a command line escaping issue on Windows.
+- **Solution:** Update to v1.0.2 or later
+- **Verification:** Run `php artisan desktop-notifier:install --force`
 
-1. Install Node.js from https://nodejs.org/
-2. Make sure Node.js is in your system PATH
-3. Restart your terminal/command prompt
+#### 🐛 "Cannot find module 'node-notifier'"
+This means Node.js dependencies weren't installed properly.
+- **Solution:** Run `php artisan desktop-notifier:install`
+- **Alternative:** Manually install: `npm install node-notifier` in vendor directory
 
-### Notifications Not Showing
-
-1. Check if Node.js is available: `node --version`
-2. Verify the notifier script exists
-3. Check the Laravel logs for any errors
-4. Make sure your system allows desktop notifications
+#### 🐛 "node: command not found"
+Node.js is not installed or not in your PATH.
+- **Solution:** Install Node.js from https://nodejs.org/
+- **Windows:** Restart your terminal after installation
+- **Linux/macOS:** Add Node.js to your PATH
 
 ### Platform-Specific Issues
 
-#### Windows
-- Make sure Windows notifications are enabled
-- Check Windows notification settings
+#### Windows 🪟
+- ✅ **Notifications not showing:**
+  - Go to Settings > System > Notifications & actions
+  - Enable notifications for your system
+  - Check focus assist settings
 
-#### macOS
+- ✅ **Permission errors:**
+  - Run terminal as Administrator
+  - Use `--force` flag: `php artisan desktop-notifier:install --force`
+
+- ✅ **Path issues:**
+  - Ensure Node.js is in system PATH
+  - Restart terminal after Node.js installation
+
+#### macOS 🍎
 - Allow notifications for your terminal/IDE
 - Check System Preferences > Notifications
+- Grant notification permissions when prompted
 
-#### Linux
-- Install notification daemon (e.g., `notify-osd`, `dunst`)
+#### Linux 🐧
+- Install notification daemon: `sudo apt-get install libnotify-bin`
+- For Ubuntu: `sudo apt-get install notify-osd`
+- For CentOS: `sudo yum install notification-daemon`
 - Check if your desktop environment supports notifications
+
+### Debug Mode
+
+Enable debug logging in your `.env`:
+```env
+LOG_LEVEL=debug
+```
+
+Then check `storage/logs/laravel.log` for detailed error information.
 
 ## Contributing
 
@@ -213,6 +276,16 @@ If you get an error that Node.js is not found:
 This package is open-sourced software licensed under the [MIT license](LICENSE).
 
 ## Changelog
+
+### Version 1.0.2 (Bug Fix Release)
+- 🐛 **FIXED:** Windows command line escaping issue causing JSON parsing errors
+- 🐛 **FIXED:** Missing Node.js dependencies in vendor installation
+- ✅ **NEW:** Enhanced cross-platform error handling and logging
+- ✅ **NEW:** Automatic Windows detection and platform-specific handling
+- ✅ **NEW:** Improved installation command with better dependency management
+- ✅ **NEW:** Test notification feature in install command
+- 📚 **IMPROVED:** Documentation with Windows-specific troubleshooting
+- 🔧 **IMPROVED:** Better error messages and debugging information
 
 ### Version 1.1.0
 - ✅ Added Laravel 12 support

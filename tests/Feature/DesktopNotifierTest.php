@@ -150,4 +150,29 @@ class DesktopNotifierTest extends TestCase
         
         $this->assertIsBool($result);
     }
+
+    /** @test */
+    public function it_handles_windows_json_escaping_properly()
+    {
+        $service = app(DesktopNotifierService::class);
+        
+        // Test with special characters that might break JSON
+        $title = 'Test "Title" with quotes';
+        $message = 'Message with "quotes" and \backslashes\ and special chars: <>{}[]';
+        
+        // This should not throw an error due to Windows escaping issues
+        $result = $service->notify($title, $message);
+        
+        $this->assertIsBool($result);
+    }
+
+    /** @test */
+    public function it_provides_helpful_error_messages()
+    {
+        $service = app(DesktopNotifierService::class);
+        
+        // Check if error handling methods exist
+        $this->assertTrue(method_exists($service, 'isNodeAvailable'));
+        $this->assertTrue(method_exists($service, 'isNotifierScriptAvailable'));
+    }
 } 

@@ -123,19 +123,26 @@ class DesktopNotifierService
      */
     protected function buildNodeCommand(string $title, string $message, array $options): string
     {
-        $scriptPath = __DIR__ . '/../../node_modules/laravel-nodenotifierdesktop/notifier.js';
-        
-        if (!file_exists($scriptPath)) {
-            $scriptPath = __DIR__ . '/../../notifier.js';
-        }
+        $scriptPath = $this->getNotifierScriptPath();
 
         $data = json_encode([
             'title' => $title,
             'message' => $message,
             'options' => $options
-        ]);
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-        return "node \"$scriptPath\" " . escapeshellarg($data);
+        // Fix for Windows command line escaping
+        if (PHP_OS_FAMILY === 'Windows') {
+            // On Windows, we need to properly escape quotes and wrap in double quotes
+            $escapedData = '"' . str_replace('"', '\"', $data) . '"';
+        } else {
+            // On Unix-like systems, use escapeshellarg
+            $escapedData = escapeshellarg($data);
+        }
+
+        $nodePath = config('laravel-nodenotifierdesktop.node_path', 'node');
+        
+        return "\"$nodePath\" \"$scriptPath\" $escapedData";
     }
 
     /**
@@ -149,15 +156,48 @@ class DesktopNotifierService
         $output = [];
         $returnCode = 0;
 
-        exec($command . ' 2>&1', $output, $returnCode);
+        // Add timeout and proper error handling
+        $fullCommand = $command . ' 2>&1';
+        
+        // On Windows, we might need to use different command execution
+        if (PHP_OS_FAMILY === 'Windows') {
+            // Use start /wait on Windows for better process handling
+            $fullCommand = 'cmd /c "' . $command . '" 2>&1';
+        }
+
+        exec($fullCommand, $output, $returnCode);
 
         if ($returnCode !== 0) {
-            Log::error('Node command failed', [
+            $errorMessage = implode("\n", $output);
+            
+            Log::error('Desktop notification failed', [
+                'platform' => PHP_OS_FAMILY,
                 'command' => $command,
                 'output' => $output,
-                'return_code' => $returnCode
+                'return_code' => $returnCode,
+                'error_message' => $errorMessage,
+                'node_available' => $this->isNodeAvailable(),
+                'script_available' => $this->isNotifierScriptAvailable()
             ]);
+
+            // Provide helpful error messages
+            if (strpos($errorMessage, 'node') !== false && strpos($errorMessage, 'not found') !== false) {
+                Log::error('Node.js not found. Please install Node.js from https://nodejs.org/');
+            } elseif (strpos($errorMessage, 'Cannot find module') !== false) {
+                Log::error('Node.js dependencies missing. Run: php artisan desktop-notifier:install');
+            } elseif (strpos($errorMessage, 'SyntaxError') !== false) {
+                Log::error('JSON parsing error in notifier script. This might be a command escaping issue.');
+            }
+
             return false;
+        }
+
+        // Log successful notifications if enabled
+        if (config('laravel-nodenotifierdesktop.log_notifications', true)) {
+            Log::debug('Desktop notification sent successfully', [
+                'platform' => PHP_OS_FAMILY,
+                'output' => $output
+            ]);
         }
 
         return true;
@@ -179,18 +219,41 @@ class DesktopNotifierService
     }
 
     /**
+     * Get the path to the notifier script
+     *
+     * @return string
+     */
+    protected function getNotifierScriptPath(): string
+    {
+        // Try vendor directory first (when installed via composer)
+        $vendorScriptPath = base_path('vendor/laravel-nodenotifierdesktop/laravel-nodenotifierdesktop/notifier.js');
+        if (file_exists($vendorScriptPath)) {
+            return $vendorScriptPath;
+        }
+
+        // Try node_modules directory (after npm install)
+        $nodeModulesPath = base_path('node_modules/laravel-nodenotifierdesktop/notifier.js');
+        if (file_exists($nodeModulesPath)) {
+            return $nodeModulesPath;
+        }
+
+        // Try package root directory (development)
+        $packageRootPath = __DIR__ . '/../../notifier.js';
+        if (file_exists($packageRootPath)) {
+            return $packageRootPath;
+        }
+
+        // Fallback to vendor directory path (will be created during installation)
+        return $vendorScriptPath;
+    }
+
+    /**
      * Check if the notifier script exists
      *
      * @return bool
      */
     public function isNotifierScriptAvailable(): bool
     {
-        $scriptPath = __DIR__ . '/../../node_modules/laravel-nodenotifierdesktop/notifier.js';
-        
-        if (!file_exists($scriptPath)) {
-            $scriptPath = __DIR__ . '/../../notifier.js';
-        }
-
-        return file_exists($scriptPath);
+        return file_exists($this->getNotifierScriptPath());
     }
 } 

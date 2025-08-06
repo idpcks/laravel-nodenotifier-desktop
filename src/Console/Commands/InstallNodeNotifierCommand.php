@@ -27,41 +27,62 @@ class InstallNodeNotifierCommand extends Command
     public function handle(): int
     {
         $this->info('Installing Laravel Node Notifier Desktop dependencies...');
+        $this->info('Platform: ' . PHP_OS_FAMILY);
 
         // Check if Node.js is available
         if (!$this->isNodeAvailable()) {
             $this->error('Node.js is not installed or not available in PATH.');
             $this->info('Please install Node.js from https://nodejs.org/');
+            $this->info('After installation, restart your terminal and try again.');
             return 1;
         }
 
-        $this->info('✓ Node.js is available');
+        $nodeVersion = $this->getNodeVersion();
+        $this->info("✓ Node.js is available (version: $nodeVersion)");
 
-        // Check if package.json exists
-        $packageJsonPath = base_path('package.json');
-        if (!file_exists($packageJsonPath)) {
-            $this->warn('package.json not found. Creating one...');
-            $this->createPackageJson();
+        // Check npm availability
+        if (!$this->isNpmAvailable()) {
+            $this->error('npm is not available. Please ensure npm is installed with Node.js.');
+            return 1;
         }
 
-        // Install npm dependencies
-        if ($this->installNpmDependencies()) {
-            $this->info('✓ NPM dependencies installed successfully');
+        $this->info('✓ npm is available');
+
+        // Setup package.json in vendor directory
+        if ($this->setupVendorPackageJson()) {
+            $this->info('✓ Package configuration created');
         } else {
-            $this->error('Failed to install NPM dependencies');
+            $this->error('Failed to setup package configuration');
             return 1;
         }
 
-        // Copy notifier script
-        if ($this->copyNotifierScript()) {
-            $this->info('✓ Notifier script copied successfully');
+        // Install node-notifier in vendor directory
+        if ($this->installNodeNotifierInVendor()) {
+            $this->info('✓ node-notifier installed successfully');
         } else {
-            $this->error('Failed to copy notifier script');
+            $this->error('Failed to install node-notifier');
             return 1;
         }
 
-        $this->info('Laravel Node Notifier Desktop installed successfully!');
+        // Copy notifier script to vendor directory
+        if ($this->copyNotifierScriptToVendor()) {
+            $this->info('✓ Notifier script installed successfully');
+        } else {
+            $this->error('Failed to install notifier script');
+            return 1;
+        }
+
+        // Test notification
+        if ($this->option('force') || $this->confirm('Would you like to test the installation with a sample notification?', true)) {
+            $this->testNotification();
+        }
+
+        $this->info('');
+        $this->info('🎉 Laravel Node Notifier Desktop installed successfully!');
         $this->info('You can now use desktop notifications in your Laravel application.');
+        $this->info('');
+        $this->info('Example usage:');
+        $this->info('  DesktopNotifier::success("Hello", "World!");');
         
         return 0;
     }
@@ -80,49 +101,98 @@ class InstallNodeNotifierCommand extends Command
     }
 
     /**
-     * Create package.json if it doesn't exist
+     * Get Node.js version
      */
-    protected function createPackageJson(): void
+    protected function getNodeVersion(): string
     {
-        $packageJson = [
-            'name' => basename(base_path()),
-            'version' => '1.0.0',
-            'description' => 'Laravel application with desktop notifications',
-            'main' => 'index.js',
-            'scripts' => [
-                'test' => 'echo "Error: no test specified" && exit 1'
-            ],
-            'dependencies' => [
-                'node-notifier' => '^10.0.1'
-            ],
-            'keywords' => ['laravel', 'notification', 'desktop'],
-            'author' => '',
-            'license' => 'MIT'
-        ];
+        $output = [];
+        $returnCode = 0;
 
-        file_put_contents(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        exec('node --version 2>&1', $output, $returnCode);
+
+        return $returnCode === 0 ? trim($output[0] ?? 'unknown') : 'unknown';
     }
 
     /**
-     * Install NPM dependencies
+     * Check if npm is available
      */
-    protected function installNpmDependencies(): bool
+    protected function isNpmAvailable(): bool
     {
-        $command = 'npm install';
+        $output = [];
+        $returnCode = 0;
+
+        exec('npm --version 2>&1', $output, $returnCode);
+
+        return $returnCode === 0;
+    }
+
+    /**
+     * Setup package.json in vendor directory
+     */
+    protected function setupVendorPackageJson(): bool
+    {
+        $vendorDir = base_path('vendor/laravel-nodenotifierdesktop/laravel-nodenotifierdesktop');
+        
+        if (!is_dir($vendorDir)) {
+            if (!mkdir($vendorDir, 0755, true)) {
+                $this->error('Failed to create vendor directory: ' . $vendorDir);
+                return false;
+            }
+        }
+
+        $packageJson = [
+            'name' => 'laravel-nodenotifierdesktop',
+            'version' => '1.0.2',
+            'description' => 'Laravel package for desktop notifications using node-notifier',
+            'main' => 'notifier.js',
+            'dependencies' => [
+                'node-notifier' => '^10.0.1'
+            ],
+            'scripts' => [
+                'postinstall' => 'echo "Node.js dependencies installed successfully"'
+            ],
+            'keywords' => ['laravel', 'notification', 'desktop', 'node-notifier'],
+            'author' => 'idpcks',
+            'license' => 'MIT'
+        ];
+
+        $packageJsonPath = $vendorDir . '/package.json';
+        
+        return file_put_contents($packageJsonPath, json_encode($packageJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    }
+
+    /**
+     * Install node-notifier in vendor directory
+     */
+    protected function installNodeNotifierInVendor(): bool
+    {
+        $vendorDir = base_path('vendor/laravel-nodenotifierdesktop/laravel-nodenotifierdesktop');
+        
+        if (!is_dir($vendorDir)) {
+            $this->error('Vendor directory not found: ' . $vendorDir);
+            return false;
+        }
+
+        $originalDir = getcwd();
+        chdir($vendorDir);
+
+        $command = 'npm install --production --no-save';
         
         if ($this->option('force')) {
             $command .= ' --force';
         }
 
-        $this->info('Installing NPM dependencies...');
+        $this->info('Installing node-notifier in vendor directory...');
         
         $output = [];
         $returnCode = 0;
 
         exec($command . ' 2>&1', $output, $returnCode);
 
+        chdir($originalDir);
+
         if ($returnCode !== 0) {
-            $this->error('NPM install failed:');
+            $this->error('npm install failed:');
             foreach ($output as $line) {
                 $this->error($line);
             }
@@ -133,31 +203,54 @@ class InstallNodeNotifierCommand extends Command
     }
 
     /**
-     * Copy notifier script to node_modules
+     * Copy notifier script to vendor directory
      */
-    protected function copyNotifierScript(): bool
+    protected function copyNotifierScriptToVendor(): bool
     {
         $sourcePath = __DIR__ . '/../../../notifier.js';
-        $targetDir = base_path('node_modules/laravel-nodenotifierdesktop');
-        $targetPath = $targetDir . '/notifier.js';
+        $vendorDir = base_path('vendor/laravel-nodenotifierdesktop/laravel-nodenotifierdesktop');
+        $targetPath = $vendorDir . '/notifier.js';
 
         if (!file_exists($sourcePath)) {
             $this->error('Notifier script not found at: ' . $sourcePath);
             return false;
         }
 
-        if (!is_dir($targetDir)) {
-            if (!mkdir($targetDir, 0755, true)) {
-                $this->error('Failed to create directory: ' . $targetDir);
-                return false;
-            }
-        }
-
-        if (!copy($sourcePath, $targetPath)) {
-            $this->error('Failed to copy notifier script');
+        if (!is_dir($vendorDir)) {
+            $this->error('Vendor directory not found: ' . $vendorDir);
             return false;
         }
 
+        if (!copy($sourcePath, $targetPath)) {
+            $this->error('Failed to copy notifier script to vendor directory');
+            return false;
+        }
+
+        // Make script executable on Unix-like systems
+        if (PHP_OS_FAMILY !== 'Windows') {
+            chmod($targetPath, 0755);
+        }
+
         return true;
+    }
+
+    /**
+     * Test notification to verify installation
+     */
+    protected function testNotification(): void
+    {
+        $this->info('Testing desktop notification...');
+        
+        try {
+            $service = app(DesktopNotifierService::class);
+            
+            if ($service->notify('Laravel Node Notifier', 'Installation successful! 🎉')) {
+                $this->info('✓ Test notification sent successfully');
+            } else {
+                $this->warn('⚠ Test notification failed. Check logs for details.');
+            }
+        } catch (\Exception $e) {
+            $this->error('✗ Test notification failed: ' . $e->getMessage());
+        }
     }
 } 

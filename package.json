@@ -1,6 +1,6 @@
 {
     "name": "laravel-nodenotifierdesktop",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "description": "Laravel package for desktop notifications using node-notifier",
     "main": "index.js",
     "scripts": {
