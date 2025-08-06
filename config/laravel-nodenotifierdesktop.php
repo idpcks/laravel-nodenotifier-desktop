@@ -24,6 +24,100 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Custom Sound File
+    |--------------------------------------------------------------------------
+    |
+    | Path to custom sound file for notifications.
+    | Supported formats: .wav, .mp3, .ogg
+    | Leave null to use system default sound.
+    |
+    */
+    'custom_sound_file' => null,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notification Position
+    |--------------------------------------------------------------------------
+    |
+    | Position where notifications will appear on screen.
+    | Options: 'top-right', 'top-left', 'bottom-right', 'bottom-left', 'top-center', 'bottom-center'
+    | Default: 'bottom-right'
+    |
+    */
+    'position' => 'bottom-right',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Position
+    |--------------------------------------------------------------------------
+    |
+    | Custom X and Y coordinates for notification position.
+    | Set to null to use predefined position above.
+    | Format: ['x' => 100, 'y' => 100]
+    |
+    */
+    'custom_position' => null,
+
+    /*
+    |--------------------------------------------------------------------------
+    | UI Theme
+    |--------------------------------------------------------------------------
+    |
+    | Visual theme for notifications.
+    | Options: 'default', 'modern', 'minimal', 'dark', 'light'
+    | Default: 'default'
+    |
+    */
+    'ui_theme' => 'default',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Animation/Transition
+    |--------------------------------------------------------------------------
+    |
+    | Animation type for notification appearance.
+    | Options: 'slide', 'fade', 'bounce', 'zoom', 'none'
+    | Default: 'slide'
+    |
+    */
+    'animation' => 'slide',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Animation Duration
+    |--------------------------------------------------------------------------
+    |
+    | Duration of animation in milliseconds.
+    | Default: 300
+    |
+    */
+    'animation_duration' => 300,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notification Size
+    |--------------------------------------------------------------------------
+    |
+    | Size of notification window.
+    | Options: 'small', 'medium', 'large'
+    | Default: 'medium'
+    |
+    */
+    'size' => 'medium',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom CSS
+    |--------------------------------------------------------------------------
+    |
+    | Custom CSS styles to apply to notifications.
+    | This will override default styles.
+    |
+    */
+    'custom_css' => null,
+
+    /*
+    |--------------------------------------------------------------------------
     | Timeout
     |--------------------------------------------------------------------------
     |

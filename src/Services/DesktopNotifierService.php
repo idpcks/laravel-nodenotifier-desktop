@@ -31,6 +31,13 @@ class DesktopNotifierService
                 'icon' => config('laravel-nodenotifierdesktop.default_icon'),
                 'sound' => config('laravel-nodenotifierdesktop.default_sound', true),
                 'timeout' => config('laravel-nodenotifierdesktop.timeout', 5000),
+                'position' => config('laravel-nodenotifierdesktop.position', 'bottom-right'),
+                'custom_position' => config('laravel-nodenotifierdesktop.custom_position'),
+                'ui_theme' => config('laravel-nodenotifierdesktop.ui_theme', 'default'),
+                'animation' => config('laravel-nodenotifierdesktop.animation', 'slide'),
+                'animation_duration' => config('laravel-nodenotifierdesktop.animation_duration', 300),
+                'size' => config('laravel-nodenotifierdesktop.size', 'medium'),
+                'custom_sound_file' => config('laravel-nodenotifierdesktop.custom_sound_file'),
             ];
 
             $options = array_merge($defaultOptions, $options);
@@ -110,6 +117,113 @@ class DesktopNotifierService
     public function info(string $title, string $message, array $options = []): bool
     {
         $options['icon'] = $options['icon'] ?? config('laravel-nodenotifierdesktop.icons.info');
+        return $this->notify($title, $message, $options);
+    }
+
+    /**
+     * Send notification with custom position
+     *
+     * @param string $title
+     * @param string $message
+     * @param string $position
+     * @param array $options
+     * @return bool
+     */
+    public function notifyAtPosition(string $title, string $message, string $position, array $options = []): bool
+    {
+        $options['position'] = $position;
+        return $this->notify($title, $message, $options);
+    }
+
+    /**
+     * Send notification with custom coordinates
+     *
+     * @param string $title
+     * @param string $message
+     * @param int $x
+     * @param int $y
+     * @param array $options
+     * @return bool
+     */
+    public function notifyAtCoordinates(string $title, string $message, int $x, int $y, array $options = []): bool
+    {
+        $options['custom_position'] = ['x' => $x, 'y' => $y];
+        return $this->notify($title, $message, $options);
+    }
+
+    /**
+     * Send notification with custom theme
+     *
+     * @param string $title
+     * @param string $message
+     * @param string $theme
+     * @param array $options
+     * @return bool
+     */
+    public function notifyWithTheme(string $title, string $message, string $theme, array $options = []): bool
+    {
+        $options['ui_theme'] = $theme;
+        return $this->notify($title, $message, $options);
+    }
+
+    /**
+     * Send notification with custom animation
+     *
+     * @param string $title
+     * @param string $message
+     * @param string $animation
+     * @param int $duration
+     * @param array $options
+     * @return bool
+     */
+    public function notifyWithAnimation(string $title, string $message, string $animation, int $duration = 300, array $options = []): bool
+    {
+        $options['animation'] = $animation;
+        $options['animation_duration'] = $duration;
+        return $this->notify($title, $message, $options);
+    }
+
+    /**
+     * Send notification with custom size
+     *
+     * @param string $title
+     * @param string $message
+     * @param string $size
+     * @param array $options
+     * @return bool
+     */
+    public function notifyWithSize(string $title, string $message, string $size, array $options = []): bool
+    {
+        $options['size'] = $size;
+        return $this->notify($title, $message, $options);
+    }
+
+    /**
+     * Send notification with custom sound file
+     *
+     * @param string $title
+     * @param string $message
+     * @param string $soundFile
+     * @param array $options
+     * @return bool
+     */
+    public function notifyWithSound(string $title, string $message, string $soundFile, array $options = []): bool
+    {
+        $options['custom_sound_file'] = $soundFile;
+        return $this->notify($title, $message, $options);
+    }
+
+    /**
+     * Send notification without sound
+     *
+     * @param string $title
+     * @param string $message
+     * @param array $options
+     * @return bool
+     */
+    public function notifySilent(string $title, string $message, array $options = []): bool
+    {
+        $options['sound'] = false;
         return $this->notify($title, $message, $options);
     }
 

@@ -11,6 +11,12 @@ A Laravel package that provides desktop notifications using node-notifier. This 
 - 🚀 Simple installation with Artisan command
 - 📊 Logging support
 - ⚡ Laravel 12 ready with modern PHP features
+- 🎯 **Custom positioning** - Set notification position on screen
+- 🎨 **Multiple UI themes** - Modern, minimal, dark, light themes
+- ✨ **Custom animations** - Slide, fade, bounce, zoom animations
+- 📏 **Adjustable sizes** - Small, medium, large notification sizes
+- 🔊 **Custom sound files** - Use your own notification sounds
+- 🎛️ **Flexible customization** - Combine multiple features together
 
 ## Requirements
 
@@ -227,12 +233,209 @@ class ProcessTask implements ShouldQueue
 - `isNodeAvailable()` - Check if Node.js is available
 - `isNotifierScriptAvailable()` - Check if the notifier script exists
 
+### Customization Methods
+
+- `notifyAtPosition(string $title, string $message, string $position, array $options = [])` - Send notification at specific position
+- `notifyAtCoordinates(string $title, string $message, int $x, int $y, array $options = [])` - Send notification at custom coordinates
+- `notifyWithTheme(string $title, string $message, string $theme, array $options = [])` - Send notification with custom theme
+- `notifyWithAnimation(string $title, string $message, string $animation, int $duration = 300, array $options = [])` - Send notification with custom animation
+- `notifyWithSize(string $title, string $message, string $size, array $options = [])` - Send notification with custom size
+- `notifyWithSound(string $title, string $message, string $soundFile, array $options = [])` - Send notification with custom sound
+- `notifySilent(string $title, string $message, array $options = [])` - Send notification without sound
+
 ### Options
 
 - `icon` - Path to custom icon file
 - `sound` - Whether to play sound (boolean)
 - `timeout` - Notification timeout in milliseconds
 - `wait` - Whether to wait for user interaction (boolean)
+- `position` - Notification position (top-right, top-left, bottom-right, bottom-left, top-center, bottom-center)
+- `custom_position` - Custom X,Y coordinates (array with 'x' and 'y' keys)
+- `ui_theme` - UI theme (default, modern, minimal, dark, light)
+- `animation` - Animation type (slide, fade, bounce, zoom, none)
+- `animation_duration` - Animation duration in milliseconds
+- `size` - Notification size (small, medium, large)
+- `custom_sound_file` - Path to custom sound file
+
+## Customization Features
+
+Package ini mendukung berbagai fitur kustomisasi untuk notifikasi desktop Anda:
+
+### 🎯 Custom Positioning
+
+Anda dapat mengatur posisi notifikasi di layar:
+
+```php
+// Posisi preset
+DesktopNotifier::notifyAtPosition('Title', 'Message', 'top-right');
+DesktopNotifier::notifyAtPosition('Title', 'Message', 'bottom-left');
+DesktopNotifier::notifyAtPosition('Title', 'Message', 'top-center');
+
+// Posisi kustom dengan koordinat
+DesktopNotifier::notifyAtCoordinates('Title', 'Message', 100, 200);
+```
+
+**Posisi yang tersedia:**
+- `top-right` - Pojok kanan atas
+- `top-left` - Pojok kiri atas  
+- `bottom-right` - Pojok kanan bawah (default)
+- `bottom-left` - Pojok kiri bawah
+- `top-center` - Tengah atas
+- `bottom-center` - Tengah bawah
+
+### 🎨 UI Themes
+
+Pilih tema visual untuk notifikasi:
+
+```php
+// Tema yang tersedia
+DesktopNotifier::notifyWithTheme('Title', 'Message', 'modern');
+DesktopNotifier::notifyWithTheme('Title', 'Message', 'dark');
+DesktopNotifier::notifyWithTheme('Title', 'Message', 'minimal');
+DesktopNotifier::notifyWithTheme('Title', 'Message', 'light');
+```
+
+**Tema yang tersedia:**
+- `default` - Tema default
+- `modern` - Tema modern dengan shadow
+- `dark` - Tema gelap
+- `light` - Tema terang
+- `minimal` - Tema minimalis
+
+### ✨ Custom Animations
+
+Atur animasi notifikasi:
+
+```php
+// Animasi yang tersedia
+DesktopNotifier::notifyWithAnimation('Title', 'Message', 'slide');
+DesktopNotifier::notifyWithAnimation('Title', 'Message', 'fade');
+DesktopNotifier::notifyWithAnimation('Title', 'Message', 'bounce');
+DesktopNotifier::notifyWithAnimation('Title', 'Message', 'zoom');
+
+// Animasi dengan durasi kustom
+DesktopNotifier::notifyWithAnimation('Title', 'Message', 'slide', 500);
+```
+
+**Animasi yang tersedia:**
+- `slide` - Slide in/out (default)
+- `fade` - Fade in/out
+- `bounce` - Bounce effect
+- `zoom` - Zoom in/out
+- `none` - Tanpa animasi
+
+### 📏 Adjustable Sizes
+
+Atur ukuran notifikasi:
+
+```php
+// Ukuran yang tersedia
+DesktopNotifier::notifyWithSize('Title', 'Message', 'small');
+DesktopNotifier::notifyWithSize('Title', 'Message', 'medium'); // default
+DesktopNotifier::notifyWithSize('Title', 'Message', 'large');
+```
+
+**Ukuran yang tersedia:**
+- `small` - Ukuran kecil (280x80px)
+- `medium` - Ukuran sedang (350x100px) - default
+- `large` - Ukuran besar (420x120px)
+
+### 🔊 Custom Sound Files
+
+Gunakan file suara kustom:
+
+```php
+// Suara kustom
+DesktopNotifier::notifyWithSound('Title', 'Message', '/path/to/sound.wav');
+
+// Tanpa suara
+DesktopNotifier::notifySilent('Title', 'Message');
+```
+
+**Format suara yang didukung:**
+- `.wav`
+- `.mp3` 
+- `.ogg`
+
+### 🎛️ Combining Multiple Features
+
+Anda dapat menggabungkan berbagai fitur kustomisasi:
+
+```php
+// Kombinasi fitur
+DesktopNotifier::notify('Title', 'Message', [
+    'ui_theme' => 'dark',
+    'animation' => 'bounce',
+    'animation_duration' => 500,
+    'position' => 'top-right',
+    'size' => 'large',
+    'custom_sound_file' => '/path/to/sound.mp3'
+]);
+
+// Atau menggunakan method chaining
+$notifier = new \LaravelNodeNotifierDesktop\Services\DesktopNotifierService();
+$notifier->notifyWithTheme('Title', 'Message', 'modern', [
+    'position' => 'bottom-left',
+    'animation' => 'fade'
+]);
+```
+
+### ⚙️ Configuration
+
+Atur pengaturan default di file `config/laravel-nodenotifierdesktop.php`:
+
+```php
+return [
+    // Posisi default
+    'position' => 'bottom-right',
+    
+    // Tema default
+    'ui_theme' => 'default',
+    
+    // Animasi default
+    'animation' => 'slide',
+    'animation_duration' => 300,
+    
+    // Ukuran default
+    'size' => 'medium',
+    
+    // Suara kustom default
+    'custom_sound_file' => null,
+    
+    // Posisi kustom default
+    'custom_position' => null,
+];
+```
+
+### 📝 Advanced Usage Examples
+
+```php
+// Notifikasi chat dengan tema modern
+DesktopNotifier::notify('New Message', 'You have a new message from John', [
+    'ui_theme' => 'modern',
+    'position' => 'top-right',
+    'animation' => 'slide',
+    'timeout' => 3000
+]);
+
+// Notifikasi sistem dengan tema gelap
+DesktopNotifier::notify('System Update', 'System is updating...', [
+    'ui_theme' => 'dark',
+    'position' => 'bottom-right',
+    'animation' => 'fade',
+    'size' => 'small'
+]);
+
+// Notifikasi email dengan tema terang
+DesktopNotifier::notify('New Email', 'Email from noreply@example.com', [
+    'ui_theme' => 'light',
+    'position' => 'top-center',
+    'animation' => 'bounce',
+    'timeout' => 4000
+]);
+```
+
+Lihat file `examples/CustomizationExamples.php` untuk contoh lengkap penggunaan semua fitur kustomisasi.
 
 ## Artisan Commands
 
@@ -360,6 +563,19 @@ This error typically occurs when Node.js is not found in the system PATH. The pa
 This package is open-sourced software licensed under the [MIT license](LICENSE).
 
 ## Changelog
+
+### Version 1.2.0 (Customization Release)
+- ✅ **NEW:** Custom positioning - Set notification position on screen
+- ✅ **NEW:** Multiple UI themes - Modern, minimal, dark, light themes
+- ✅ **NEW:** Custom animations - Slide, fade, bounce, zoom animations
+- ✅ **NEW:** Adjustable sizes - Small, medium, large notification sizes
+- ✅ **NEW:** Custom sound files - Use your own notification sounds
+- ✅ **NEW:** Flexible customization - Combine multiple features together
+- ✅ **NEW:** Customization methods - Easy-to-use methods for each feature
+- ✅ **NEW:** Configuration options - Set defaults in config file
+- ✅ **NEW:** Comprehensive examples - Complete usage examples
+- 📚 **IMPROVED:** Enhanced documentation with customization guide
+- 🔧 **IMPROVED:** Better configuration structure
 
 ### Version 1.0.4 (Critical Bug Fix Release)
 - 🐛 **FIXED:** Windows command execution issue with empty Node.js path causing `"'\"\"' is not recognized as an internal or external command"`
