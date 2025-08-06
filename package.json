@@ -1,0 +1,20 @@
+{
+    "name": "laravel-nodenotifierdesktop",
+    "version": "1.0.0",
+    "description": "Laravel package for desktop notifications using node-notifier",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "node-notifier": "^10.0.1"
+    },
+    "keywords": [
+        "laravel",
+        "notification",
+        "desktop",
+        "node-notifier"
+    ],
+    "author": "Laravel Node Notifier Desktop",
+    "license": "MIT"
+} 
