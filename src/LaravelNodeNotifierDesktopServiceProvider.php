@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use LaravelNodeNotifierDesktop\Services\DesktopNotifierService;
 use LaravelNodeNotifierDesktop\Console\Commands\InstallNodeNotifierCommand;
 use LaravelNodeNotifierDesktop\Console\Commands\DebugNodeNotifierCommand;
+use LaravelNodeNotifierDesktop\Console\Commands\PerformanceOptimizationCommand;
 
 class LaravelNodeNotifierDesktopServiceProvider extends ServiceProvider
 {
@@ -38,6 +39,7 @@ class LaravelNodeNotifierDesktopServiceProvider extends ServiceProvider
             $this->commands([
                 InstallNodeNotifierCommand::class,
                 DebugNodeNotifierCommand::class,
+                PerformanceOptimizationCommand::class,
             ]);
         }
     }

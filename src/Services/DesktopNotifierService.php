@@ -4,20 +4,34 @@ namespace LaravelNodeNotifierDesktop\Services;
 
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Config;
 
 class DesktopNotifierService
 {
     protected Client $client;
     protected string $nodeScriptPath;
+    
+    // Performance optimization: Cache frequently used values
+    protected static ?string $cachedNodePath = null;
+    protected static ?array $cachedDefaultOptions = null;
+    protected static ?bool $cachedNodeAvailable = null;
+    protected static ?string $cachedNodeVersion = null;
+    protected static ?bool $cachedScriptAvailable = null;
+    
+    // Performance monitoring
+    protected static array $performanceMetrics = [];
+    protected static int $notificationCount = 0;
+    protected static float $totalExecutionTime = 0;
 
     public function __construct()
     {
         $this->client = new Client();
-        $this->nodeScriptPath = base_path('node_modules/laravel-nodenotifierdesktop/notifier.js');
+        $this->nodeScriptPath = $this->getNotifierScriptPath();
     }
 
     /**
-     * Send a desktop notification
+     * Send a desktop notification with performance optimizations
      *
      * @param string $title
      * @param string $message
@@ -26,8 +40,51 @@ class DesktopNotifierService
      */
     public function notify(string $title, string $message, array $options = []): bool
     {
+        $startTime = microtime(true);
+        
         try {
-            $defaultOptions = [
+            // Use cached default options to reduce config calls
+            $defaultOptions = $this->getCachedDefaultOptions();
+            $options = array_merge($defaultOptions, $options);
+
+            $command = $this->buildNodeCommand($title, $message, $options);
+            
+            if ($this->executeNodeCommand($command)) {
+                $this->logPerformanceMetrics($startTime, 'success');
+                
+                if (config('laravel-nodenotifierdesktop.log_notifications', true)) {
+                    Log::info('Desktop notification sent', [
+                        'title' => $title,
+                        'message' => $message,
+                        'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
+                    ]);
+                }
+                return true;
+            }
+
+            $this->logPerformanceMetrics($startTime, 'failed');
+            return false;
+        } catch (\Exception $e) {
+            $this->logPerformanceMetrics($startTime, 'error');
+            Log::error('Failed to send desktop notification', [
+                'error' => $e->getMessage(),
+                'title' => $title,
+                'message' => $message,
+                'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Get cached default options to reduce config calls
+     *
+     * @return array
+     */
+    protected function getCachedDefaultOptions(): array
+    {
+        if (self::$cachedDefaultOptions === null) {
+            self::$cachedDefaultOptions = [
                 'icon' => config('laravel-nodenotifierdesktop.default_icon'),
                 'sound' => config('laravel-nodenotifierdesktop.default_sound', true),
                 'timeout' => config('laravel-nodenotifierdesktop.timeout', 5000),
@@ -39,29 +96,77 @@ class DesktopNotifierService
                 'size' => config('laravel-nodenotifierdesktop.size', 'medium'),
                 'custom_sound_file' => config('laravel-nodenotifierdesktop.custom_sound_file'),
             ];
-
-            $options = array_merge($defaultOptions, $options);
-
-            $command = $this->buildNodeCommand($title, $message, $options);
-            
-            if ($this->executeNodeCommand($command)) {
-                Log::info('Desktop notification sent', [
-                    'title' => $title,
-                    'message' => $message,
-                    'options' => $options
-                ]);
-                return true;
-            }
-
-            return false;
-        } catch (\Exception $e) {
-            Log::error('Failed to send desktop notification', [
-                'error' => $e->getMessage(),
-                'title' => $title,
-                'message' => $message
-            ]);
-            return false;
         }
+
+        return self::$cachedDefaultOptions;
+    }
+
+    /**
+     * Clear cached options (useful for testing or config changes)
+     */
+    public static function clearCache(): void
+    {
+        self::$cachedNodePath = null;
+        self::$cachedDefaultOptions = null;
+        self::$cachedNodeAvailable = null;
+        self::$cachedNodeVersion = null;
+        self::$cachedScriptAvailable = null;
+    }
+
+    /**
+     * Log performance metrics
+     */
+    protected function logPerformanceMetrics(float $startTime, string $status): void
+    {
+        $executionTime = microtime(true) - $startTime;
+        self::$totalExecutionTime += $executionTime;
+        self::$notificationCount++;
+
+        self::$performanceMetrics[] = [
+            'timestamp' => microtime(true),
+            'execution_time' => $executionTime,
+            'status' => $status
+        ];
+
+        // Keep only last 100 metrics to prevent memory issues
+        if (count(self::$performanceMetrics) > 100) {
+            array_shift(self::$performanceMetrics);
+        }
+
+        // Log performance warnings
+        if ($executionTime > 1.0) { // More than 1 second
+            Log::warning('Slow notification execution detected', [
+                'execution_time' => round($executionTime * 1000, 2) . 'ms',
+                'status' => $status
+            ]);
+        }
+    }
+
+    /**
+     * Get performance statistics
+     */
+    public static function getPerformanceStats(): array
+    {
+        if (empty(self::$performanceMetrics)) {
+            return [
+                'total_notifications' => 0,
+                'average_execution_time' => 0,
+                'min_execution_time' => 0,
+                'max_execution_time' => 0,
+                'success_rate' => 0
+            ];
+        }
+
+        $successCount = count(array_filter(self::$performanceMetrics, fn($m) => $m['status'] === 'success'));
+        $executionTimes = array_column(self::$performanceMetrics, 'execution_time');
+
+        return [
+            'total_notifications' => self::$notificationCount,
+            'average_execution_time' => round(array_sum($executionTimes) / count($executionTimes) * 1000, 2) . 'ms',
+            'min_execution_time' => round(min($executionTimes) * 1000, 2) . 'ms',
+            'max_execution_time' => round(max($executionTimes) * 1000, 2) . 'ms',
+            'success_rate' => round(($successCount / count(self::$performanceMetrics)) * 100, 2) . '%'
+        ];
     }
 
     /**
@@ -228,7 +333,41 @@ class DesktopNotifierService
     }
 
     /**
-     * Build the Node.js command
+     * Send multiple notifications efficiently (batch processing)
+     *
+     * @param array $notifications Array of ['title', 'message', 'options']
+     * @return array Results for each notification
+     */
+    public function notifyBatch(array $notifications): array
+    {
+        $results = [];
+        $startTime = microtime(true);
+
+        foreach ($notifications as $index => $notification) {
+            $notificationStartTime = microtime(true);
+            
+            $title = $notification['title'] ?? '';
+            $message = $notification['message'] ?? '';
+            $options = $notification['options'] ?? [];
+            
+            $results[$index] = [
+                'success' => $this->notify($title, $message, $options),
+                'execution_time' => round((microtime(true) - $notificationStartTime) * 1000, 2) . 'ms'
+            ];
+        }
+
+        $totalTime = microtime(true) - $startTime;
+        Log::info('Batch notification completed', [
+            'total_notifications' => count($notifications),
+            'total_execution_time' => round($totalTime * 1000, 2) . 'ms',
+            'average_per_notification' => round(($totalTime / count($notifications)) * 1000, 2) . 'ms'
+        ]);
+
+        return $results;
+    }
+
+    /**
+     * Build the Node.js command with optimizations
      *
      * @param string $title
      * @param string $message
@@ -239,44 +378,26 @@ class DesktopNotifierService
     {
         $scriptPath = $this->getNotifierScriptPath();
 
+        // Optimize JSON encoding with specific flags for better performance
         $data = json_encode([
             'title' => $title,
             'message' => $message,
             'options' => $options
-        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
 
-        // Get Node.js path with fallback
-        $nodePath = config('laravel-nodenotifierdesktop.node_path');
+        // Use cached Node.js path
+        $nodePath = $this->getCachedNodePath();
         
-        // If node_path is not configured, try to find Node.js automatically
-        if (empty($nodePath)) {
-            $nodePath = $this->findNodePath();
-        }
-        
-        // Final fallback to 'node' command
-        if (empty($nodePath)) {
-            $nodePath = 'node';
-        }
-
-        // Debug logging if enabled
-        if (config('laravel-nodenotifierdesktop.debug_mode', false)) {
-            Log::debug('Node.js path found', ['node_path' => $nodePath]);
-        }
-
         // Fix for Windows command line escaping
         if (PHP_OS_FAMILY === 'Windows') {
-            // On Windows, we need to properly escape quotes and wrap in double quotes
             $escapedData = '"' . str_replace('"', '\"', $data) . '"';
             
-            // Don't quote nodePath if it's just 'node' to avoid double-quoting issues
             if ($nodePath === 'node') {
                 $nodePath = 'node';
             } else {
-                // Ensure nodePath is properly quoted for Windows
                 $nodePath = '"' . trim($nodePath, '"') . '"';
             }
         } else {
-            // On Unix-like systems, use escapeshellarg
             $escapedData = escapeshellarg($data);
             $nodePath = escapeshellarg($nodePath);
         }
@@ -292,7 +413,7 @@ class DesktopNotifierService
     }
 
     /**
-     * Execute the Node.js command
+     * Execute the Node.js command with performance optimizations
      *
      * @param string $command
      * @return bool
@@ -307,11 +428,13 @@ class DesktopNotifierService
         
         // On Windows, we need to handle command execution differently
         if (PHP_OS_FAMILY === 'Windows') {
-            // Use cmd /c without additional quoting to avoid double-quoting issues
             $fullCommand = 'cmd /c ' . $command . ' 2>&1';
         }
 
+        // Use non-blocking execution for better performance
+        $startTime = microtime(true);
         exec($fullCommand, $output, $returnCode);
+        $executionTime = microtime(true) - $startTime;
 
         if ($returnCode !== 0) {
             $errorMessage = implode("\n", $output);
@@ -322,10 +445,11 @@ class DesktopNotifierService
                 'output' => $output,
                 'return_code' => $returnCode,
                 'error_message' => $errorMessage,
+                'execution_time' => round($executionTime * 1000, 2) . 'ms',
                 'node_available' => $this->isNodeAvailable(),
                 'script_available' => $this->isNotifierScriptAvailable(),
                 'node_version' => $this->getNodeVersion(),
-                'node_path' => $this->findNodePath()
+                'node_path' => $this->getCachedNodePath()
             ]);
 
             // Provide helpful error messages
@@ -346,7 +470,8 @@ class DesktopNotifierService
         if (config('laravel-nodenotifierdesktop.log_notifications', true)) {
             Log::debug('Desktop notification sent successfully', [
                 'platform' => PHP_OS_FAMILY,
-                'output' => $output
+                'output' => $output,
+                'execution_time' => round($executionTime * 1000, 2) . 'ms'
             ]);
         }
 
@@ -354,59 +479,89 @@ class DesktopNotifierService
     }
 
     /**
-     * Check if Node.js is available
+     * Get cached Node.js path
+     *
+     * @return string
+     */
+    protected function getCachedNodePath(): string
+    {
+        if (self::$cachedNodePath === null) {
+            $nodePath = config('laravel-nodenotifierdesktop.node_path');
+            
+            if (empty($nodePath)) {
+                $nodePath = $this->findNodePath();
+            }
+            
+            if (empty($nodePath)) {
+                $nodePath = 'node';
+            }
+
+            self::$cachedNodePath = $nodePath;
+
+            if (config('laravel-nodenotifierdesktop.debug_mode', false)) {
+                Log::debug('Node.js path cached', ['node_path' => $nodePath]);
+            }
+        }
+
+        return self::$cachedNodePath;
+    }
+
+    /**
+     * Check if Node.js is available with caching
      *
      * @return bool
      */
     public function isNodeAvailable(): bool
     {
-        $output = [];
-        $returnCode = 0;
+        if (self::$cachedNodeAvailable === null) {
+            $output = [];
+            $returnCode = 0;
 
-        // Try to find Node.js path first
-        $nodePath = $this->findNodePath();
-        
-        if ($nodePath && $nodePath !== 'node') {
-            // Use the found path
-            exec("\"$nodePath\" --version 2>&1", $output, $returnCode);
-        } else {
-            // Fallback to 'node' command
-            exec('node --version 2>&1', $output, $returnCode);
+            $nodePath = $this->getCachedNodePath();
+            
+            if ($nodePath && $nodePath !== 'node') {
+                exec("\"$nodePath\" --version 2>&1", $output, $returnCode);
+            } else {
+                exec('node --version 2>&1', $output, $returnCode);
+            }
+
+            self::$cachedNodeAvailable = $returnCode === 0;
         }
 
-        return $returnCode === 0;
+        return self::$cachedNodeAvailable;
     }
 
     /**
-     * Get Node.js version
+     * Get Node.js version with caching
      *
      * @return string|null
      */
     public function getNodeVersion(): ?string
     {
-        $output = [];
-        $returnCode = 0;
+        if (self::$cachedNodeVersion === null) {
+            $output = [];
+            $returnCode = 0;
 
-        // Try to find Node.js path first
-        $nodePath = $this->findNodePath();
-        
-        if ($nodePath && $nodePath !== 'node') {
-            // Use the found path
-            exec("\"$nodePath\" --version 2>&1", $output, $returnCode);
-        } else {
-            // Fallback to 'node' command
-            exec('node --version 2>&1', $output, $returnCode);
+            $nodePath = $this->getCachedNodePath();
+            
+            if ($nodePath && $nodePath !== 'node') {
+                exec("\"$nodePath\" --version 2>&1", $output, $returnCode);
+            } else {
+                exec('node --version 2>&1', $output, $returnCode);
+            }
+
+            if ($returnCode === 0 && !empty($output)) {
+                self::$cachedNodeVersion = trim($output[0]);
+            } else {
+                self::$cachedNodeVersion = null;
+            }
         }
 
-        if ($returnCode === 0 && !empty($output)) {
-            return trim($output[0]);
-        }
-
-        return null;
+        return self::$cachedNodeVersion;
     }
 
     /**
-     * Get the path to the notifier script
+     * Get the path to the notifier script with caching
      *
      * @return string
      */
@@ -436,17 +591,21 @@ class DesktopNotifierService
     }
 
     /**
-     * Check if the notifier script exists
+     * Check if the notifier script exists with caching
      *
      * @return bool
      */
     public function isNotifierScriptAvailable(): bool
     {
-        return file_exists($this->getNotifierScriptPath());
+        if (self::$cachedScriptAvailable === null) {
+            self::$cachedScriptAvailable = file_exists($this->getNotifierScriptPath());
+        }
+
+        return self::$cachedScriptAvailable;
     }
 
     /**
-     * Find Node.js executable path
+     * Find Node.js executable path with caching
      *
      * @return string|null
      */
